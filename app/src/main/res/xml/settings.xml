@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="@string/prefs_category_video_settings_title">
+
+        <ListPreference
+            android:defaultValue="1080"
+            android:entries="@array/resolutionsArray"
+            android:entryValues="@array/resolutionValues"
+            android:key="@string/res_key"
+            android:summary="@string/preference_resolution_summary"
+            android:title="@string/preference_resolution_title" />
+
+        <ListPreference
+            android:defaultValue="30"
+            android:entries="@array/fpsArray"
+            android:entryValues="@array/fpsArray"
+            android:key="@string/fps_key"
+            android:summary="@string/preference_fps_summary"
+            android:title="@string/preference_fps_title" />
+
+        <ListPreference
+            android:defaultValue="7130317"
+            android:entries="@array/bitrateArray"
+            android:entryValues="@array/bitratesValue"
+            android:key="@string/bitrate_key"
+            android:summary="@string/preference_bit_summary"
+            android:title="@string/preference_bit_title" />
+
+        <ListPreference
+            android:defaultValue="auto"
+            android:entries="@array/orientationEntries"
+            android:entryValues="@array/orientationValues"
+            android:key="@string/orientation_key"
+            android:summary="@string/preference_orientation_summary"
+            android:title="@string/preference_orientation_title" />
+
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/prefs_category_audio_settings_title">
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="@string/audio_rec_key"
+            android:summary="@string/preference_audio_record_summary"
+            android:title="@string/preference_audio_record_title" />
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:title="@string/prefs_category_recording_settings_title">
+        <CheckBoxPreference
+            android:title="@string/preference_floating_control_title"
+            android:summary="@string/preference_floating_control_summary"
+            android:key="@string/preference_floating_control_key"
+            android:defaultValue="false" />
+        <CheckBoxPreference
+            android:title="@string/preference_enable_target_app_title"
+            android:summary="@string/preference_enable_target_app_summary"
+            android:key="@string/preference_enable_target_app_key"
+            android:defaultValue="false" />
+
+        <com.viking.jyn.preferences.AppPickerPreference
+            android:title="@string/preference_app_chooser_title"
+            android:summary="@string/preference_app_chooser_summary"
+            android:key="@string/preference_app_chooser_key"
+            android:defaultValue="none"
+            android:dependency="@string/preference_enable_target_app_key"/>
+    </PreferenceCategory>
+</PreferenceScreen>
