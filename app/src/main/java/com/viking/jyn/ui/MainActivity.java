@@ -4,8 +4,8 @@ import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
-import android.app.Fragment;
 import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -18,11 +18,8 @@ import android.os.Environment;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.TabLayout;
-import android.support.v13.app.FragmentStatePagerAdapter;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -37,8 +34,6 @@ import com.viking.jyn.interfaces.PermissionResultListener;
 import com.viking.jyn.services.RecorderService;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -47,8 +42,6 @@ public class MainActivity extends AppCompatActivity {
     private MediaProjectionManager mProjectionManager;
 
     private FloatingActionButton fab;
-
-    private ViewPager viewPager;
 
     public static void createDir() {
         File appDir = new File(Environment.getExternalStorageDirectory() + File.separator + Const.APP_DIR);
@@ -64,11 +57,7 @@ public class MainActivity extends AppCompatActivity {
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        viewPager = findViewById(R.id.viewpager);
-        setupViewPager(viewPager);
-
-        TabLayout tabLayout = findViewById(R.id.tabs);
-        tabLayout.setupWithViewPager(viewPager);
+        setSettings();
 
         //Arbitrary "Write to external storage" permission since this permission is most important for the app
         requestPermissionStorage();
@@ -81,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
         //Respond to app shortcut
         if (getIntent().getAction() != null) {
             // do something with action
+            Log.i(Const.TAG, "Intent action not empty...") ;
         }
 
         if (isServiceRunning(RecorderService.class)) {
@@ -101,10 +91,12 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void setupViewPager(ViewPager viewPager) {
-        ViewPagerAdapter adapter = new ViewPagerAdapter(getFragmentManager());
-        adapter.addFragment(new SettingsPreferenceFragment(), getString(R.string.tab_settings_title));
-        viewPager.setAdapter(adapter);
+    private void setSettings(){
+        FragmentManager fm = getFragmentManager() ;
+        FragmentTransaction transaction = fm.beginTransaction() ;
+        SettingsPreferenceFragment settings = new SettingsPreferenceFragment() ;
+        transaction.replace(R.id.main_content, settings);
+        transaction.commit();
     }
 
     private boolean isServiceRunning(Class<?> serviceClass) {
@@ -240,40 +232,6 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
-        }
-    }
-
-    class ViewPagerAdapter extends FragmentStatePagerAdapter {
-        private final List<Fragment> mFragmentList = new ArrayList<>();
-        private final List<String> mFragmentTitleList = new ArrayList<>();
-
-        ViewPagerAdapter(FragmentManager manager) {
-            super(manager);
-        }
-
-        @Override
-        public Fragment getItem(int position) {
-            return mFragmentList.get(position);
-        }
-
-        @Override
-        public int getItemPosition(Object object) {
-            return super.getItemPosition(object);
-        }
-
-        @Override
-        public int getCount() {
-            return mFragmentList.size();
-        }
-
-        void addFragment(Fragment fragment, String title) {
-            mFragmentList.add(fragment);
-            mFragmentTitleList.add(title);
-        }
-
-        @Override
-        public CharSequence getPageTitle(int position) {
-            return mFragmentTitleList.get(position);
         }
     }
 }
