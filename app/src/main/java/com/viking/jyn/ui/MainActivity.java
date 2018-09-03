@@ -93,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
         if (!is_running) {
             //Request Screen recording permission
             startActivityForResult(mProjectionManager.createScreenCaptureIntent(), Const.SCREEN_RECORD_REQUEST_CODE);
-        } else if (is_running) {
+        } else {
             //stop recording if the service is already active and recording
             Toast.makeText(MainActivity.this, "Screen already recording", Toast.LENGTH_SHORT).show();
         }
@@ -108,6 +108,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        Log.i(Const.TAG, "enter onNewIntent...");
         handle_extra_stuff(intent) ;
     }
 

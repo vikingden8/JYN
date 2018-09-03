@@ -60,6 +60,7 @@ public class CommandReceiver extends BroadcastReceiver {
         editor.putString(context.getString(R.string.file_name_key), file_name) ;
         editor.apply();
         boolean is_running = isServiceRunning(context, RecorderService.class) ;
+        Log.i(Const.TAG, "Recorder service is running or not: " + is_running) ;
         if (!is_running) {
             Intent sendStart = new Intent(context, MainActivity.class) ;
             sendStart.setAction(Const.SCREEN_RECORDING_START) ;
