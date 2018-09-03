@@ -80,15 +80,52 @@ public class MainActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (!isServiceRunning(RecorderService.class)) {
-                    //Request Screen recording permission
-                    startActivityForResult(mProjectionManager.createScreenCaptureIntent(), Const.SCREEN_RECORD_REQUEST_CODE);
-                } else if (isServiceRunning(RecorderService.class)) {
-                    //stop recording if the service is already active and recording
-                    Toast.makeText(MainActivity.this, "Screen already recording", Toast.LENGTH_SHORT).show();
-                }
+                process_start();
             }
         });
+
+        // handle extra stuff
+        handle_extra_stuff(getIntent()) ;
+    }
+
+    private void process_start(){
+        boolean is_running = isServiceRunning(RecorderService.class) ;
+        if (!is_running) {
+            //Request Screen recording permission
+            startActivityForResult(mProjectionManager.createScreenCaptureIntent(), Const.SCREEN_RECORD_REQUEST_CODE);
+        } else if (is_running) {
+            //stop recording if the service is already active and recording
+            Toast.makeText(MainActivity.this, "Screen already recording", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void process_stop(){
+        Intent stopIntent = new Intent(this, RecorderService.class);
+        stopIntent.setAction(Const.SCREEN_RECORDING_STOP);
+        startService(stopIntent);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        handle_extra_stuff(intent) ;
+    }
+
+    private void handle_extra_stuff(Intent intent){
+        if (intent.getAction() == null){
+            Log.i(Const.TAG, "action is empty, abort it...") ;
+            return ;
+        }
+        String action = intent.getAction() ;
+        if (Const.SCREEN_RECORDING_START.equals(action)){
+            Log.i(Const.TAG, "action start received...") ;
+            process_start();
+        }else if (Const.SCREEN_RECORDING_STOP.equals(action)){
+            Log.i(Const.TAG, "action stop received...");
+            process_stop();
+        }else{
+            Log.i(Const.TAG, "action unknown, abort it...") ;
+        }
     }
 
     private void setSettings(){
@@ -101,6 +138,7 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean isServiceRunning(Class<?> serviceClass) {
         ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        if (manager == null) return false ;
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
             if (serviceClass.getName().equals(service.service.getClassName())) {
                 return true;
@@ -142,8 +180,7 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
                             ActivityCompat.requestPermissions(MainActivity.this,
-                                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                                    Const.EXTERNAL_DIR_REQUEST_CODE);
+                                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, Const.EXTERNAL_DIR_REQUEST_CODE);
                         }
                     })
                     .setCancelable(false);
@@ -154,8 +191,7 @@ public class MainActivity extends AppCompatActivity {
     @TargetApi(23)
     public void requestSystemWindowsPermission(int code) {
         if (!Settings.canDrawOverlays(this)) {
-            Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    Uri.parse("package:" + getPackageName()));
+            Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()));
             startActivityForResult(intent, code);
         }
     }

@@ -26,6 +26,7 @@
         android:theme="@style/AppTheme.Light" >
         <activity
             android:name=".ui.MainActivity"
+            android:launchMode="singleInstance"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:theme="@style/AppTheme.Light.NoActionBar">
             <intent-filter>
@@ -41,6 +42,15 @@
         <service
             android:name=".services.FloatingControlService"
             android:exported="false" />
+
+        <receiver
+            android:name=".receiver.CommandReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.viking.jyn.action.ADB_CMD"/>
+            </intent-filter>
+
+        </receiver>
 
         <activity
             android:name=".ui.AboutActivity"

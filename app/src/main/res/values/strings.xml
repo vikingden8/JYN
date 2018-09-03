@@ -9,6 +9,7 @@
     <string name="preference_bit_summary">Choose bit rate</string>
     <string name="preference_audio_record_title">Record audio</string>
     <string name="preference_audio_record_summary">Records audio from mic along with screen video</string>
+    <string name="file_name_key" translatable="false">file_name</string>
     <string name="res_key" translatable="false">resolution</string>
     <string name="fps_key" translatable="false">fps</string>
     <string name="bitrate_key" translatable="false">bitrate</string>

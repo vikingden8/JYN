@@ -42,10 +42,7 @@ import com.viking.jyn.ui.MainActivity;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 
 public class RecorderService extends Service {
@@ -53,7 +50,7 @@ public class RecorderService extends Service {
     private static int WIDTH, HEIGHT, FPS, DENSITY_DPI;
     private static int BITRATE;
     private static boolean mustRecAudio;
-    private static String SAVEPATH;
+    private static String SAVE_PATH;
 
     static {
         ORIENTATIONS.append(Surface.ROTATION_0, 0);
@@ -107,47 +104,51 @@ public class RecorderService extends Service {
             createNotificationChannels();
 
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        Log.i(Const.TAG, "enter service onStartCommand...") ;
+        if (intent.getAction() != null){
+            switch (intent.getAction()) {
+                case Const.SCREEN_RECORDING_START:
+                    Log.i(Const.TAG, "handle SCREEN_RECORDING_START") ;
+                    /* Wish MediaRecorder had a method isRecording() or similar. But, we are forced to
+                     * manage the state ourself. Let's hope the request is honored.
+                     * Request: https://code.google.com/p/android/issues/detail?id=800 */
+                    if (!isRecording) {
+                        //Get values from Default SharedPreferences
+                        //screenOrientation = intent.getIntExtra(Const.SCREEN_ORIENTATION, 0);
+                        screenOrientation = ((WindowManager) getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getRotation();
+                        data = intent.getParcelableExtra(Const.RECORDER_INTENT_DATA);
+                        result = intent.getIntExtra(Const.RECORDER_INTENT_RESULT, Activity.RESULT_OK);
 
-        switch (intent.getAction()) {
-            case Const.SCREEN_RECORDING_START:
-                /* Wish MediaRecorder had a method isRecording() or similar. But, we are forced to
-                 * manage the state ourself. Let's hope the request is honored.
-                 * Request: https://code.google.com/p/android/issues/detail?id=800 */
-                if (!isRecording) {
-                    //Get values from Default SharedPreferences
-                    //screenOrientation = intent.getIntExtra(Const.SCREEN_ORIENTATION, 0);
-                    screenOrientation = ((WindowManager) getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getRotation();
-                    data = intent.getParcelableExtra(Const.RECORDER_INTENT_DATA);
-                    result = intent.getIntExtra(Const.RECORDER_INTENT_RESULT, Activity.RESULT_OK);
+                        getValues();
+                        // Check if an app has to be started before recording and start the app
+                        if (prefs.getBoolean(getString(R.string.preference_enable_target_app_key), false))
+                            startAppBeforeRecording(prefs.getString(getString(R.string.preference_app_chooser_key), "none"));
 
-                    getValues();
-                    // Check if an app has to be started before recording and start the app
-                    if (prefs.getBoolean(getString(R.string.preference_enable_target_app_key), false))
-                        startAppBeforeRecording(prefs.getString(getString(R.string.preference_app_chooser_key), "none"));
-
-                    startRecording();
-                } else {
-                    Toast.makeText(this, R.string.screen_recording_already_active_toast, Toast.LENGTH_SHORT).show();
-                }
-                break;
-            case Const.SCREEN_RECORDING_STOP:
-                //Unbind the floating control service if its bound (naturally unbound if floating controls is disabled)
-                if (isBound) {
-                    unbindService(serviceConnection);
-                    Log.d(Const.TAG, "Unbinding connection service");
-                }
-                stopScreenSharing();
-                //The service is started as foreground service and hence has to be stopped
-                stopForeground(true);
-                break;
+                        startRecording();
+                    } else {
+                        Toast.makeText(this, R.string.screen_recording_already_active_toast, Toast.LENGTH_SHORT).show();
+                    }
+                    break;
+                case Const.SCREEN_RECORDING_STOP:
+                    Log.i(Const.TAG, "handle SCREEN_RECORDING_STOP") ;
+                    //Unbind the floating control service if its bound (naturally unbound if floating controls is disabled)
+                    if (isBound) {
+                        unbindService(serviceConnection);
+                        Log.d(Const.TAG, "Unbinding connection service");
+                    }
+                    stopScreenSharing();
+                    //The service is started as foreground service and hence has to be stopped
+                    stopForeground(true);
+                    break;
+            }
         }
         return START_STICKY;
     }
 
-    private void startAppBeforeRecording(String packagename) {
-        if (packagename.equals("none"))
+    private void startAppBeforeRecording(String pkg) {
+        if (pkg.equals("none"))
             return;
-        Intent startAppIntent = getPackageManager().getLaunchIntentForPackage(packagename);
+        Intent startAppIntent = getPackageManager().getLaunchIntentForPackage(pkg);
         startActivity(startAppIntent);
     }
 
@@ -202,7 +203,7 @@ public class RecorderService extends Service {
                 mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
             mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
             mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-            mMediaRecorder.setOutputFile(SAVEPATH);
+            mMediaRecorder.setOutputFile(SAVE_PATH);
             mMediaRecorder.setVideoSize(WIDTH, HEIGHT);
             mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
             if (mustRecAudio)
@@ -291,8 +292,10 @@ public class RecorderService extends Service {
             saveDir.mkdirs();
         }
         useFloatingControls = prefs.getBoolean(getString(R.string.preference_floating_control_key), false);
-        String saveFileName = getFileSaveName();
-        SAVEPATH = saveLocation + File.separator + saveFileName + ".mp4";
+        String saveFileName = prefs.getString(getString(R.string.file_name_key), "recording-temp") + ".mp4";
+        Log.i(Const.TAG, String.format("saving file name: %s", saveFileName)) ;
+        SAVE_PATH = saveLocation + File.separator + saveFileName ;
+        Log.i(Const.TAG, String.format("saving file path: %s", SAVE_PATH)) ;
     }
 
     private void setWidthHeight(String res) {
@@ -346,14 +349,6 @@ public class RecorderService extends Service {
         return aspectRatio;
     }
 
-    private String getFileSaveName() {
-        String filename = "yyyyMMdd_hhmmss";
-        String prefix = "recording";
-        Date today = Calendar.getInstance().getTime();
-        SimpleDateFormat formatter = new SimpleDateFormat(filename);
-        return prefix + "_" + formatter.format(today);
-    }
-
     private void destroyMediaProjection() {
         try {
             mMediaRecorder.stop();
@@ -361,7 +356,7 @@ public class RecorderService extends Service {
             Log.i(Const.TAG, "MediaProjection Stopped");
         } catch (RuntimeException e) {
             Log.e(Const.TAG, "Fatal exception! Destroying media projection failed." + "\n" + e.getMessage());
-            if (new File(SAVEPATH).delete())
+            if (new File(SAVE_PATH).delete())
                 Log.d(Const.TAG, "Corrupted file delete successful");
             Toast.makeText(this, getString(R.string.fatal_exception_message), Toast.LENGTH_SHORT).show();
         } finally {
@@ -380,7 +375,7 @@ public class RecorderService extends Service {
     private void indexFile() {
         //Create a new ArrayList and add the newly created video file path to it
         ArrayList<String> toBeScanned = new ArrayList<>();
-        toBeScanned.add(SAVEPATH);
+        toBeScanned.add(SAVE_PATH);
         String[] toBeScannedStr = new String[toBeScanned.size()];
         toBeScannedStr = toBeScanned.toArray(toBeScannedStr);
 
